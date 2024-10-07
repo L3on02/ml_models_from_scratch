@@ -1,5 +1,5 @@
 from models.decision_tree import DecisionTree
 
-class RandomForest:
+class GradientBoostingTree:
     def __init__(self) -> None:
         pass
