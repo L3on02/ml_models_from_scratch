@@ -8,6 +8,7 @@ In this project, I will implement the basic algorithms for Decision Trees, Rando
 ## Structure of the project
 
 The project is structured as follows:
+```
 .
 ├── README.md
 ├── examples
@@ -20,5 +21,5 @@ The project is structured as follows:
 │   ├── gradient_boosting_tree.py
 │   └── random_forest.py
 └── requirements.txt
-
+```
 The models folder contains the implementation of the Decision Tree, Random Forest, and Gradient Boosting Tree algorithms. In the examples folder there are practical uses of the models. There also are comparables with the sklearn library.
