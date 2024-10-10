@@ -1,3 +1,4 @@
+import numpy as np
 from models.decision_tree import DecisionTree
 
 class GradientBoostingTree:
