@@ -150,7 +150,7 @@ class DecisionTreeRegressor(DecisionTree):
         super().__init__(max_depth, num_thresholds)
         
     # calculates the Mean Squared Error for the regressor
-    def _score_split(left_Y, right_Y):
+    def _score_split(self, left_Y, right_Y):
         left_sample_count = len(left_Y)
         right_sample_count = len (right_Y)
         total_sample_count = left_sample_count + right_sample_count
