@@ -12,14 +12,16 @@ class Node:
     def is_leaf(self):
         return self.value is not None
     
+    
 class DecisionTree(ABC):
-    def __init__(self, max_depth) -> None:
+    def __init__(self, max_depth, num_thresholds) -> None:
         self.tree = None
         self.max_depth = max_depth
+        self.num_thresholds = num_thresholds
         
     def fit(self, X, Y):
         '''creates a decision tree from the data'''
-        self.tree = self._build_tree(X, Y)
+        self.tree = self._build_tree(0, X, Y)
         
     def predict(self, X):
         '''makes a prediction on the input data'''
@@ -50,7 +52,6 @@ class DecisionTree(ABC):
         right_subtree = self._build_tree(depth=depth+1, X=right_X, Y=right_Y)
         
         return Node(feature_index=split_feature_index, threshold=split_threshold, left=left_subtree, right=right_subtree)
-        
     
     def _predict(self, input_data, node: Node):
         # if _predict reaches a leave, the prediction has been made and can be returned
@@ -63,23 +64,9 @@ class DecisionTree(ABC):
             return self._predict(input_data, node.left)
         else:
             return self._predict(input_data, node.right)
-
-
-    @abstractmethod
-    def _best_split(self, X, Y):
-        pass
-        
-    @abstractmethod
-    def _leaf_value(self, Y):
-        pass
-    
-class DecisionTreeClassifier(DecisionTree):
-    def __init__(self, max_depth, num_thresholds) -> None:
-        DecisionTree.__init__(max_depth)
-        self.num_thresholds = num_thresholds
         
     def _best_split(self, X, Y):
-        best_gini = float(1.0) # start with worst possible gini impurity (actually 1 is not even possible)
+        best_score = float('inf') # start with worst possible score
         best_feature_index = None
         best_threshold = None
         
@@ -103,24 +90,36 @@ class DecisionTreeClassifier(DecisionTree):
                 if len(left_Y) == 0 or len(right_Y) == 0:
                     continue
                 
-                gini = self._calc_gini(left_Y, right_Y)
+                score = self._score_split(left_Y, right_Y)
                 
-                if gini < best_gini:
-                    best_gini = gini
+                if score < best_score:
+                    best_score = score
                     best_feature_index = feature_index
                     best_threshold = threshold
                     
         return best_feature_index, best_threshold 
-                        
+
+    @abstractmethod
+    def _score_split(self, X, Y):
+        pass
+        
+    @abstractmethod
+    def _leaf_value(self, Y):
+        pass
     
-    @staticmethod
-    def _calc_gini(left_Y, right_Y):
+    
+class DecisionTreeClassifier(DecisionTree):
+    def __init__(self, max_depth, num_thresholds) -> None:
+        super().__init__(max_depth, num_thresholds)
+                        
+    # calculates the gini impurity for the classifier
+    def _score_split(self, left_Y, right_Y):
         left_sample_count = len(left_Y)
         right_sample_count = len (right_Y)
         total_sample_count = left_sample_count + right_sample_count
         
-        left_weight = len(left_Y) / total_sample_count
-        right_weight = len(right_weight) / total_sample_count
+        left_weight = left_sample_count / total_sample_count
+        right_weight = right_sample_count / total_sample_count
         
         # gini is 1 minus the sum of the probability of each classification within its subset squared
         # => c loops over every unique label in Y, the probability of that class is then the sum of all 
@@ -132,13 +131,43 @@ class DecisionTreeClassifier(DecisionTree):
         # averages the right and left gini to return a total evaluation of the split
         return left_weight * left_gini + right_weight * right_gini
     
+    # determines most present label using a hashmap to count them
+    def _leaf_value(self, Y):
+        counts = {}
+        for p in Y:
+            counts[p] = counts.get(p,0) + 1
+        max_count = 0
+        label = None
+        for l, c in counts.items():
+            if c > max_count:
+                max_count = c
+                label = l
+        return label
+            
+    
 class DecisionTreeRegressor(DecisionTree):
-    def __init__(self, max_depth) -> None:
-        DecisionTree.__init__(max_depth)
+    def __init__(self, max_depth, num_thresholds) -> None:
+        super().__init__(max_depth, num_thresholds)
+        
+    # calculates the Mean Squared Error for the regressor
+    def _score_split(left_Y, right_Y):
+        left_sample_count = len(left_Y)
+        right_sample_count = len (right_Y)
+        total_sample_count = left_sample_count + right_sample_count
+        
+        left_weight = left_sample_count / total_sample_count
+        right_weight = right_sample_count / total_sample_count
+        
+        mean_left = np.mean(left_Y)
+        mean_right = np.mean(right_Y)
+        
+        # calculates MSE for each of the two splits. If one split is empty, return inf to indicate bad split
+        left_mse = sum((mean_left - l) ** 2 for l in left_Y) / left_sample_count if left_sample_count > 0 else float('inf')
+        right_mse = sum((mean_right - r) ** 2 for r in right_Y) / right_sample_count if right_sample_count > 0 else float('inf')
+        
+        # averages the right and left mse to return a total evaluation of the split
+        return left_weight * left_mse + right_weight * right_mse
     
-    def _best_split(self, X, Y):
-        pass
-    
-    @staticmethod
-    def calc_mse(left_Y, right_y):
-        pass
+    # returns the average value of all data in the node
+    def _leaf_value(self, Y):
+        return np.mean(Y)
