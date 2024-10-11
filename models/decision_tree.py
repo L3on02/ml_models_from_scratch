@@ -70,6 +70,9 @@ class DecisionTree(ABC):
         best_feature_index = None
         best_threshold = None
         
+        # doesnt modify the data if not overridden -> allows random feature selection for random forest
+        X = self._modify_split_data(X)
+        
         # loop over every feature in X
         for feature_index in range(X.shape[1]):
             points = X[:, feature_index]
@@ -102,7 +105,11 @@ class DecisionTree(ABC):
     @abstractmethod
     def _score_split(self, X, Y):
         pass
-        
+    
+    @abstractmethod
+    def _modify_split_data(X):
+        return X
+    
     @abstractmethod
     def _leaf_value(self, Y):
         pass
