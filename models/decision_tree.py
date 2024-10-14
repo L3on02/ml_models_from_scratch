@@ -14,10 +14,9 @@ class Node:
     
     
 class DecisionTree(ABC):
-    def __init__(self, max_depth, num_thresholds) -> None:
+    def __init__(self, max_depth) -> None:
         self.tree = None
         self.max_depth = max_depth
-        self.num_thresholds = num_thresholds
         
     def fit(self, X, Y):
         '''creates a decision tree from the data'''
@@ -76,10 +75,12 @@ class DecisionTree(ABC):
         # loop over every feature in X
         for feature_index in range(X.shape[1]):
             points = X[:, feature_index]
-            is_numeric = isinstance(X[0, feature_index], (int, float))
+            is_numeric = isinstance(X[0, feature_index], (int, float))            
             # now determine possible split thresholds within that feature
-            # => split once for every category or along equally spaced thresholds
-            unique_values = np.linspace(min(points), max(points), self.num_thresholds) if is_numeric else np.unique(points)
+            # => split once for every category or along the equally spaced thresholds
+            # the amount of thresholds is scaled dynamically to the variance of the data with
+            # a minimum of 5 and a maximum of 100 thresholds (or the amount of data points if less)
+            unique_values = np.linspace(min(points), max(points), min(max(5, int(np.log(np.var(points) + 1) * 2)), min(len(points), 20))) if is_numeric else np.unique(points)
             
             # loop over every possible threshold
             for threshold in unique_values:
@@ -101,14 +102,14 @@ class DecisionTree(ABC):
                     best_threshold = threshold
                     
         return best_feature_index, best_threshold 
+    
+    # can be overridden by subclasses to modify the data before splitting
+    def _modify_split_data(self, X):
+        return X
 
     @abstractmethod
     def _score_split(self, X, Y):
         pass
-    
-    @abstractmethod
-    def _modify_split_data(X):
-        return X
     
     @abstractmethod
     def _leaf_value(self, Y):
@@ -116,8 +117,8 @@ class DecisionTree(ABC):
     
     
 class DecisionTreeClassifier(DecisionTree):
-    def __init__(self, max_depth, num_thresholds) -> None:
-        super().__init__(max_depth, num_thresholds)
+    def __init__(self, max_depth) -> None:
+        super().__init__(max_depth)
                         
     # calculates the gini impurity for the classifier
     def _score_split(self, left_Y, right_Y):
@@ -153,8 +154,8 @@ class DecisionTreeClassifier(DecisionTree):
             
     
 class DecisionTreeRegressor(DecisionTree):
-    def __init__(self, max_depth, num_thresholds) -> None:
-        super().__init__(max_depth, num_thresholds)
+    def __init__(self, max_depth) -> None:
+        super().__init__(max_depth)
         
     # calculates the Mean Squared Error for the regressor
     def _score_split(self, left_Y, right_Y):
