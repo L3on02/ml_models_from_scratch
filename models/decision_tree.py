@@ -30,10 +30,14 @@ class DecisionTree(ABC):
         # check if max depth is reached -> calculate leaf value for regression or classification (implemented by subclasses)
         # or if the node is pure, return a leaf node with the value/label of that class
         if depth == self.max_depth or len(np.unique(Y)) == 1:
-            return Node(value = DecisionTree._leaf_value(Y))
+            return Node(value = self._leaf_value(Y))
         
         # best split, implemented by subclasses should return a tuple of featureIndex and threshold where threshold can be a number or a category
         split_feature_index, split_threshold = self._best_split(X, Y)
+        
+        # if no split is possible, return a leaf node with the value/label of the most common class
+        if split_feature_index is None:
+            return Node(value = self._leaf_value(Y))
         
         is_numeric = isinstance(split_threshold, (int, float))
         points = X[:, split_feature_index]
@@ -70,21 +74,21 @@ class DecisionTree(ABC):
         best_threshold = None
         
         # doesnt modify the data if not overridden -> allows random feature selection for random forest
-        X = self._modify_split_data(X)
+        features = self._choose_split_indicies(X)
         
-        # loop over every feature in X
-        for feature_index in range(X.shape[1]):
-            points = X[:, feature_index]
+        # loop over every for splitting selected feature in X
+        for feature_index in features:
+            samples = X[:, feature_index]            
             is_numeric = isinstance(X[0, feature_index], (int, float))            
             # now determine possible split thresholds within that feature
             # => split once for every category or along the equally spaced thresholds
             # the amount of thresholds is scaled dynamically to the variance of the data with
             # a minimum of 5 and a maximum of 100 thresholds (or the amount of data points if less)
-            unique_values = np.linspace(min(points), max(points), min(max(5, int(np.log(np.var(points) + 1) * 2)), min(len(points), 20))) if is_numeric else np.unique(points)
+            unique_values = np.linspace(min(samples), max(samples), min(max(5, int(np.log(np.var(samples) + 1) * 2)), min(len(samples), 20))) if is_numeric else np.unique(samples)
             
             # loop over every possible threshold
             for threshold in unique_values:
-                left_indices = points < threshold if is_numeric else points == threshold
+                left_indices = samples < threshold if is_numeric else samples == threshold
                 
                 # split label arrays into respective splits
                 left_Y, right_Y = Y[left_indices], Y[~left_indices]
@@ -104,15 +108,16 @@ class DecisionTree(ABC):
         return best_feature_index, best_threshold 
     
     # can be overridden by subclasses to modify the data before splitting
-    def _modify_split_data(self, X):
-        return X
+    def _choose_split_indicies(self, X):
+        # be default all indices are considered for splitting
+        return [i for i in range(X.shape[1])]
 
     @abstractmethod
     def _score_split(self, X, Y):
         pass
     
+    @staticmethod 
     @abstractmethod
-    @staticmethod
     def _leaf_value(Y):
         pass
     
