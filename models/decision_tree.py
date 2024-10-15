@@ -30,7 +30,7 @@ class DecisionTree(ABC):
         # check if max depth is reached -> calculate leaf value for regression or classification (implemented by subclasses)
         # or if the node is pure, return a leaf node with the value/label of that class
         if depth == self.max_depth or len(np.unique(Y)) == 1:
-            return Node(value = self._leaf_value(Y))
+            return Node(value = DecisionTree._leaf_value(Y))
         
         # best split, implemented by subclasses should return a tuple of featureIndex and threshold where threshold can be a number or a category
         split_feature_index, split_threshold = self._best_split(X, Y)
@@ -112,7 +112,8 @@ class DecisionTree(ABC):
         pass
     
     @abstractmethod
-    def _leaf_value(self, Y):
+    @staticmethod
+    def _leaf_value(Y):
         pass
     
     
@@ -140,7 +141,8 @@ class DecisionTreeClassifier(DecisionTree):
         return left_weight * left_gini + right_weight * right_gini
     
     # determines most present label using a hashmap to count them
-    def _leaf_value(self, Y):
+    @staticmethod
+    def _leaf_value(Y):
         counts = {}
         for p in Y:
             counts[p] = counts.get(p,0) + 1
@@ -177,5 +179,6 @@ class DecisionTreeRegressor(DecisionTree):
         return left_weight * left_mse + right_weight * right_mse
     
     # returns the average value of all data in the node
-    def _leaf_value(self, Y):
+    @staticmethod
+    def _leaf_value(Y):
         return np.mean(Y)
