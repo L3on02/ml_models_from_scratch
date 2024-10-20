@@ -22,7 +22,7 @@ class GradientBoostingTree(ABC):
         for _ in range(self.n_estimators):
             # first the residuals are computed as the negative gradient of the loss function which,
             # depending on whether the model is a classifier or regressor, is
-            # MSE or cross-entropy loss
+            # MSE or LogLoss
             residuals = self._compute_residuals(Y, predictions)
             # create a new weak learner (DecisionTree) and fit it to train data
             # but use the residuals as the target variable
@@ -62,7 +62,31 @@ class GradientBoostingTree(ABC):
     
 class GradientBoostingClassifier(GradientBoostingTree):
     def __init__(self, n_estimators, max_depth, learning_rate) -> None:
-        super().__init__(n_estimators, max_depth, learning_rate)       
+        super().__init__(n_estimators, max_depth, learning_rate)     
+        
+    def _compute_residuals(self, Y, prediction):
+        # uses the sigmoid function to turn the predicted value into a probability
+        # of the sample belonging to the positive class
+        # which is then subtracted from the actual label to get the residual
+        return Y - (1 / (1 + np.exp(-prediction)))
+    
+    def _initial_prediction(self, Y):
+        # the initial prediction for the classifier is the log(odds) of proportion of positive classes over all classes
+        p = np.clip(np.mean(Y), 1e-10, 1 - 1e-10) # since the formula devides through p, we clip out 0 and 1 to avoid division by zero
+        return np.log(p / (1 - p))
+    
+    def _interpret_prediction(self, prediction):
+        # converts the prediction to a probability and then rounds it to 0 or 1
+        # with the threshold being 0.5
+        return np.round(1 / (1 + np.exp(-prediction)), 0)
+    
+    # relevant for multi-class classification
+    def _one_hot_encode(self, Y):
+        # returns all unique labels
+        classes = np.unique(Y)
+        # then create a vector for each row in Y that has len(classes) elements and a "True" at the index of its label
+        # the array needs to be transposed to have the shape (samples, one hot encoded classes)
+        return np.array([Y == c for c in classes]).T  
     
 class GradientBoostingRegressor(GradientBoostingTree):
     def __init__(self, n_estimators, max_depth, learning_rate) -> None:
