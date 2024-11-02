@@ -83,7 +83,7 @@ class DecisionTree(ABC):
             # now determine possible split thresholds within that feature
             # => split once for every category or along the equally spaced thresholds
             # the amount of thresholds is scaled dynamically to the variance of the data with
-            # a minimum of 5 and a maximum of 100 thresholds (or the amount of data points if less)
+            # a minimum of 5 and a maximum of 20 thresholds (or the amount of data points if less)
             unique_values = np.linspace(min(samples), max(samples), min(max(5, int(np.log(np.var(samples) + 1) * 2)), min(len(samples), 20))) if is_numeric else np.unique(samples)
             
             # loop over every possible threshold
