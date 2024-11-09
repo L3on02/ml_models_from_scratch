@@ -31,6 +31,8 @@ class DecisionTree(ABC):
     def _build_tree(self, depth, X, Y) -> Node:
         # check if max depth is reached -> calculate leaf value for regression or classification (implemented by subclasses)
         # or if the node is pure, return a leaf node with the value/label of that class
+        # as part of the pruning process, when a node only has a small amount of samples (eg. it will most likely not generalize well),
+        # we also stop the tree building process to safe resources and reduce overfitting
         if depth == self.max_depth or len(np.unique(Y)) == 1 or len(Y) < self.min_samples_split:
             return Node(value = self._leaf_value(Y))
         
@@ -97,6 +99,9 @@ class DecisionTree(ABC):
                 
                 # if the split would result in only one group it is meaningless for the creation of the tree
                 # and we dont need to waste resources computing its gini impurity
+                # for optimizing the performance and reducing overfitting, we also consider very imbalanced splits
+                # that would result in one group being smaller than the minimum samples per leaf as not viable
+                # this step is part of the pruning process
                 if len(left_Y) < self.min_samples_leaf or len(right_Y) < self.min_samples_leaf:
                     continue
                 
