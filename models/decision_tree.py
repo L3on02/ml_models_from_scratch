@@ -14,11 +14,12 @@ class Node:
     
     
 class DecisionTree(ABC):
-    def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5) -> None:
+    def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         self.tree = None
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
+        self.percentile_count = num_thresholds
         
     def fit(self, X, Y):
         '''creates a decision tree from the data'''
@@ -83,12 +84,11 @@ class DecisionTree(ABC):
         # loop over every for splitting selected feature in X
         for feature_index in features:
             samples = X[:, feature_index]            
-            is_numeric = isinstance(X[0, feature_index], (int, float))            
+            is_numeric = isinstance(X[0, feature_index], (int, float))         
             # now determine possible split thresholds within that feature
-            # => split once for every category or along the equally spaced thresholds
-            # the amount of thresholds is scaled dynamically to the variance of the data with
-            # a minimum of 5 and a maximum of 20 thresholds (or the amount of data points if less)
-            unique_values = np.linspace(min(samples), max(samples), min(max(5, int(np.log(np.var(samples) + 1) * 2)), min(len(samples), 20))) if is_numeric else np.unique(samples)
+            # => split once for every category or along the spaced thresholds
+            #   to reduce the amount of thresholds, we only consider the a set of percentiles
+            unique_values = np.percentile(samples, np.linspace(1, 99, self.percentile_count)) if is_numeric else np.unique(samples)
             
             # loop over every possible threshold
             for threshold in unique_values:
@@ -130,8 +130,8 @@ class DecisionTree(ABC):
     
     
 class DecisionTreeClassifier(DecisionTree):
-    def __init__(self, max_depth) -> None:
-        super().__init__(max_depth)
+    def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5) -> None:
+        super().__init__(max_depth, min_samples_split, min_samples_leaf)
                         
     # calculates the gini impurity for the classifier
     def _score_split(self, left_Y, right_Y):
@@ -168,8 +168,8 @@ class DecisionTreeClassifier(DecisionTree):
             
     
 class DecisionTreeRegressor(DecisionTree):
-    def __init__(self, max_depth) -> None:
-        super().__init__(max_depth)
+    def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
         
     # calculates the Mean Squared Error for the regressor
     def _score_split(self, left_Y, right_Y):
