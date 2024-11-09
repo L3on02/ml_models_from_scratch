@@ -14,9 +14,11 @@ class Node:
     
     
 class DecisionTree(ABC):
-    def __init__(self, max_depth) -> None:
+    def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5) -> None:
         self.tree = None
         self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
         
     def fit(self, X, Y):
         '''creates a decision tree from the data'''
@@ -29,7 +31,7 @@ class DecisionTree(ABC):
     def _build_tree(self, depth, X, Y) -> Node:
         # check if max depth is reached -> calculate leaf value for regression or classification (implemented by subclasses)
         # or if the node is pure, return a leaf node with the value/label of that class
-        if depth == self.max_depth or len(np.unique(Y)) == 1:
+        if depth == self.max_depth or len(np.unique(Y)) == 1 or len(Y) < self.min_samples_split:
             return Node(value = self._leaf_value(Y))
         
         # best split, implemented by subclasses should return a tuple of featureIndex and threshold where threshold can be a number or a category
@@ -95,7 +97,7 @@ class DecisionTree(ABC):
                 
                 # if the split would result in only one group it is meaningless for the creation of the tree
                 # and we dont need to waste resources computing its gini impurity
-                if len(left_Y) == 0 or len(right_Y) == 0:
+                if len(left_Y) < self.min_samples_leaf or len(right_Y) < self.min_samples_leaf:
                     continue
                 
                 score = self._score_split(left_Y, right_Y)
