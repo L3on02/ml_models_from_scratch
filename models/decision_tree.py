@@ -38,7 +38,7 @@ class DecisionTree(ABC):
             return Node(value = self._leaf_value(Y))
         
         # best split, implemented by subclasses should return a tuple of featureIndex and threshold where threshold can be a number or a category
-        split_feature_index, split_threshold = self._best_split(X, Y)
+        split_feature_index, split_threshold = self._best_split(X, Y, depth)
         
         # if no split is possible, return a leaf node with the value/label of the most common class
         if split_feature_index is None:
@@ -88,7 +88,7 @@ class DecisionTree(ABC):
                 
         return self._score_split(left_Y, right_Y)
         
-    def _best_split(self, X, Y):
+    def _best_split(self, X, Y, depth):
         best_score = float('inf') # start with worst possible score
         best_feature_index = None
         best_threshold = None
@@ -103,10 +103,13 @@ class DecisionTree(ABC):
             
             # now determine possible split thresholds within that feature
             # => split once for every category or along equally spaced thresholds between the min and max value
-            thresholds = np.linspace(min(samples), max(samples), self.num_thresholds) if is_numeric else np.unique(samples)
-            
+            thresholds = np.linspace(min(samples), max(samples), max(1, int(((self.max_depth -  np.sqrt(depth)) / self.max_depth) * self.num_thresholds))) if is_numeric else np.unique(samples)
+            prev_score = float('inf')
             for threshold in thresholds:
                 score = self._score_at_threshold(samples, Y, threshold, is_numeric)
+                # if the score is worse than the previous one, we can stop the search for the best threshold since the thresholds are sorted
+                if is_numeric and score > prev_score:
+                    break
                 if score < best_score:
                     best_score = score
                     best_feature_index = feature_index
