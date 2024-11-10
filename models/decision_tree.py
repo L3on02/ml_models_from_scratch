@@ -14,7 +14,7 @@ class Node:
     
     
 class DecisionTree(ABC):
-    def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
         self.tree = None
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
@@ -78,7 +78,7 @@ class DecisionTree(ABC):
         # split label arrays into respective splits
         left_Y, right_Y = Y[left_indices], Y[~left_indices]
         
-         # if the split would result in only one group it is meaningless for the creation of the tree
+        # if the split would result in only one group it is meaningless for the creation of the tree
         # and we dont need to waste resources computing its gini impurity
         # for optimizing the performance and reducing overfitting, we also consider very imbalanced splits
         # that would result in one group being smaller than the minimum samples per leaf as not viable
@@ -133,8 +133,8 @@ class DecisionTree(ABC):
     
     
 class DecisionTreeClassifier(DecisionTree):
-    def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5) -> None:
-        super().__init__(max_depth, min_samples_split, min_samples_leaf)
+    def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
                         
     # calculates the gini impurity for the classifier
     def _score_split(self, left_Y, right_Y):

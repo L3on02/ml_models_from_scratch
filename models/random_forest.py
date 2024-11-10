@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from models.decision_tree import DecisionTree, DecisionTreeClassifier, DecisionTreeRegressor
 
 class RandomForestTreeClassifier(DecisionTreeClassifier):
-    def __init__(self, max_depth) -> None:
-        super().__init__(max_depth)
+    def __init__(self, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
+        super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
     
     # method is called in DecisionTree._best_split
     def _choose_split_indicies(self, X):
@@ -14,8 +14,8 @@ class RandomForestTreeClassifier(DecisionTreeClassifier):
         
     
 class RandomForestTreeRegressor(DecisionTreeRegressor):
-    def __init__(self, max_depth) -> None:
-        super().__init__(max_depth)
+    def __init__(self, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
+        super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
     
     # same function as in the Classifier
     def _choose_split_indicies(self, X):
@@ -23,7 +23,7 @@ class RandomForestTreeRegressor(DecisionTreeRegressor):
     
 class RandomForest(ABC):
     @abstractmethod
-    def __init__(self, max_depth, n_samples) -> None:
+    def __init__(self) -> None:
         self.trees: list[DecisionTree] = []
     
     def fit(self, X, Y):
@@ -53,8 +53,8 @@ class RandomForest(ABC):
         pass
 
 class RandomForestClassifier(RandomForest):
-    def __init__(self, max_depth, n_samples) -> None:
-        self.trees = [RandomForestTreeClassifier(max_depth) for _ in range(n_samples)]
+    def __init__(self, n_samples = 20, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        self.trees = [RandomForestTreeClassifier(max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_samples)]
     
     @staticmethod  
     def _evaluate(predictions):
@@ -62,8 +62,8 @@ class RandomForestClassifier(RandomForest):
         return np.array([RandomForestTreeClassifier._leaf_value(prediction) for prediction in predictions])
         
 class RandomForestRegressor(RandomForest):
-    def __init__(self, max_depth, n_samples) -> None:
-        self.trees = [RandomForestTreeRegressor(max_depth) for _ in range(n_samples)]
+    def __init__(self, n_samples = 20, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        self.trees = [RandomForestTreeRegressor(max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_samples)]
     
     @staticmethod  
     def _evaluate(predictions):
