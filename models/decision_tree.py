@@ -19,7 +19,7 @@ class DecisionTree(ABC):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
-        self.percentile_count = num_thresholds
+        self.num_thresholds = num_thresholds
         
     def fit(self, X, Y):
         '''creates a decision tree from the data'''
@@ -73,6 +73,21 @@ class DecisionTree(ABC):
         else:
             return self._predict(input_data, node.right)
         
+    def _score_at_threshold(self, samples, Y, threshold, is_numeric):
+        left_indices = samples < threshold if is_numeric else samples == threshold       
+        # split label arrays into respective splits
+        left_Y, right_Y = Y[left_indices], Y[~left_indices]
+        
+         # if the split would result in only one group it is meaningless for the creation of the tree
+        # and we dont need to waste resources computing its gini impurity
+        # for optimizing the performance and reducing overfitting, we also consider very imbalanced splits
+        # that would result in one group being smaller than the minimum samples per leaf as not viable
+        # this step is part of the pruning process
+        if len(left_Y) < self.min_samples_leaf or len(right_Y) < self.min_samples_leaf:
+            return float('inf')
+                
+        return self._score_split(left_Y, right_Y)
+        
     def _best_split(self, X, Y):
         best_score = float('inf') # start with worst possible score
         best_feature_index = None
@@ -84,29 +99,14 @@ class DecisionTree(ABC):
         # loop over every for splitting selected feature in X
         for feature_index in features:
             samples = X[:, feature_index]            
-            is_numeric = isinstance(X[0, feature_index], (int, float))         
-            # now determine possible split thresholds within that feature
-            # => split once for every category or along the spaced thresholds
-            #   to reduce the amount of thresholds, we only consider the a set of percentiles
-            unique_values = np.percentile(samples, np.linspace(1, 99, self.percentile_count)) if is_numeric else np.unique(samples)
+            is_numeric = isinstance(X[0, feature_index], (int, float))
             
-            # loop over every possible threshold
-            for threshold in unique_values:
-                left_indices = samples < threshold if is_numeric else samples == threshold
-                
-                # split label arrays into respective splits
-                left_Y, right_Y = Y[left_indices], Y[~left_indices]
-                
-                # if the split would result in only one group it is meaningless for the creation of the tree
-                # and we dont need to waste resources computing its gini impurity
-                # for optimizing the performance and reducing overfitting, we also consider very imbalanced splits
-                # that would result in one group being smaller than the minimum samples per leaf as not viable
-                # this step is part of the pruning process
-                if len(left_Y) < self.min_samples_leaf or len(right_Y) < self.min_samples_leaf:
-                    continue
-                
-                score = self._score_split(left_Y, right_Y)
-                
+            # now determine possible split thresholds within that feature
+            # => split once for every category or along equally spaced thresholds between the min and max value
+            thresholds = np.linspace(min(samples), max(samples), self.num_thresholds) if is_numeric else np.unique(samples)
+            
+            for threshold in thresholds:
+                score = self._score_at_threshold(samples, Y, threshold, is_numeric)
                 if score < best_score:
                     best_score = score
                     best_feature_index = feature_index
