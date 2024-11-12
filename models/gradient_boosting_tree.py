@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from models.decision_tree import DecisionTreeRegressor
 
 class GradientBoostingTree(ABC):
-    def __init__(self, n_estimators = 20, learning_rate = 0.1, patience = 5, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators, learning_rate, patience, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
         self.estimators: list[DecisionTreeRegressor] = []
         self.max_depth = max_depth
         self.n_estimators = n_estimators
@@ -76,6 +76,10 @@ class GradientBoostingTree(ABC):
         pass
     
     @abstractmethod
+    def _evaluate(self, X, Y):
+        pass
+    
+    @abstractmethod
     def _initial_prediction(self, Y):
         pass
     
@@ -84,7 +88,7 @@ class GradientBoostingTree(ABC):
         pass
     
 class GradientBoostingClassifier(GradientBoostingTree):
-    def __init__(self, n_estimators = 15, learning_rate = 0.1, patience = 5, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 10, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         super().__init__(n_estimators, learning_rate, patience, max_depth, min_samples_split, min_samples_leaf, num_thresholds)     
         
     def _compute_residuals(self, Y, prediction):
@@ -105,7 +109,7 @@ class GradientBoostingClassifier(GradientBoostingTree):
     
     def _evaluate(self, X, Y):
         # calculates the log loss of the predictions
-        predictions = self.predict(X)
+        predictions = np.clip(self.predict(X), 1e-10, 1 - 1e-10) # clip to avoid log(0) or log(1)
         return -np.mean(Y * np.log(predictions) + (1 - Y) * np.log(1 - predictions))
     
     # relevant for multi-class classification
@@ -117,7 +121,7 @@ class GradientBoostingClassifier(GradientBoostingTree):
         return np.array([Y == c for c in classes]).T  
     
 class GradientBoostingRegressor(GradientBoostingTree):
-    def __init__(self, n_estimators = 15, learning_rate = 0.1, patience = 5, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 10, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         super().__init__(n_estimators, learning_rate, patience, max_depth, min_samples_split, min_samples_leaf, num_thresholds)  
         
     def _compute_residuals(self, Y, prediction):
