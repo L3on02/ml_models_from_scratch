@@ -1,6 +1,6 @@
 # Implementing Decision Trees, Random Forests and Gradient Boosting Trees from scratch
 
-In this project, I will implement the algorithms behind Decision Trees, Random Forests and Gradient Boosting Trees from scratch, using nothing but numpy. In examples the performance of my implementations will be tested against a variety of datasets and ultimately compared to the performance of sklearn library's models for the same datasets.
+In this project, I will implement the algorithms behind Decision Trees, Random Forests and Gradient Boosting Trees from scratch, using nothing but `numpy`. In examples the performance of my implementations will be tested against a variety of datasets and ultimately compared to the performance of `scikit-learn` library's models for the same datasets.
 
 ## How to use
 
@@ -12,7 +12,7 @@ A similar approach can be used to install the required libraries for any other P
 ```python
 from models.decision_tree import DecisionTreeClassifier
 ```
-All models have the same simple interface that consits of the two methods `fit` and `predict`. The `fit` method takes the training data and the target values, while the `predict` method receives the test data and returns the predicted values. The models can be tuned using the hyperparameters that are passed as arguments to the constructor. Depending on the model, the hyperparameters may vary, explainations are available as a docstring in each constructor.
+All models have the same simple interface that consits of the two methods `fit()` and `predict()`. While `fit()` takes the training data and the target values, `predict()` receives the test data and returns the predicted values. All models can be tuned using the hyperparameters that are passed as arguments to the constructor. Depending on the model, the hyperparameters may vary, explainations are available as a docstring in each constructor.
 
 ## Structure of the project
 
