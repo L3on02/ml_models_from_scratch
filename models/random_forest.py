@@ -27,7 +27,7 @@ class RandomForest(ABC):
         self.trees: list[DecisionTree] = []
     
     def fit(self, X, Y):
-        '''creates a random forest from the data'''
+        """creates a random forest from the data"""
         for tree in self.trees:
             # randomizes sample selection and weight for every tree
             # -> some samples will occur multiple times, some not at all (=> replace=True means duplicates are possible)
@@ -40,7 +40,7 @@ class RandomForest(ABC):
             tree.fit(X_subset, Y_subset)
             
     def predict(self, X):
-        '''makes a prediction on the input data'''
+        """makes a prediction on the input data"""
         # collects the predictions of every tree in the forest and transposes the array
         # -> the transposition is necessary to get the predictions for every input data in a single row
         predictions = np.array([tree.predict(X) for tree in self.trees]).T
@@ -54,6 +54,30 @@ class RandomForest(ABC):
 
 class RandomForestClassifier(RandomForest):
     def __init__(self, n_samples = 20, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        """A random forrest classifier that uses decision trees as weak learners.
+
+        Parameters
+        ----------
+        n_samples : int, default=20
+            The number of weak learners in the ensemble.
+        
+        Weak learner parameters:
+        
+        max_depth : int, default=15
+            The maximum depth of the tree, when no other stopping criteria are met.
+
+        min_samples_split : int, default=5
+            The minimum number of samples required to split an internal node.
+
+        min_samples_leaf : int, default=5
+            The minimum number of samples required to be at a leaf node.
+            A split point at any depth will only be considered if it leaves at least
+            min_samples_leaf training samples in each of the left and right branches.
+
+        num_thresholds : int, default=10
+            The number of thresholds to consider when finding the best split
+            for a numeric feature.
+        """
         self.trees = [RandomForestTreeClassifier(max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_samples)]
     
     @staticmethod  
@@ -63,6 +87,30 @@ class RandomForestClassifier(RandomForest):
         
 class RandomForestRegressor(RandomForest):
     def __init__(self, n_samples = 20, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        """A random forrest regressor that uses decision trees as weak learners.
+
+        Parameters
+        ----------
+        n_samples : int, default=20
+            The number of weak learners in the ensemble.
+        
+        Weak learner parameters:
+        
+        max_depth : int, default=15
+            The maximum depth of the tree, when no other stopping criteria are met.
+
+        min_samples_split : int, default=5
+            The minimum number of samples required to split an internal node.
+
+        min_samples_leaf : int, default=5
+            The minimum number of samples required to be at a leaf node.
+            A split point at any depth will only be considered if it leaves at least
+            min_samples_leaf training samples in each of the left and right branches.
+
+        num_thresholds : int, default=10
+            The number of thresholds to consider when finding the best split
+            for a numeric feature.
+        """
         self.trees = [RandomForestTreeRegressor(max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_samples)]
     
     @staticmethod  

@@ -15,6 +15,7 @@ class GradientBoostingTree(ABC):
         self.num_thresholds = num_thresholds
         
     def fit(self, X, Y):
+        """creates a gradient boosting tree from the data"""
         # preprocess the data if necessary
         Y = self._preprocess(Y)
                 
@@ -51,6 +52,7 @@ class GradientBoostingTree(ABC):
                 no_improvement_rounds = 0
                 
     def predict(self, X):
+        """makes a prediction on the input data"""
         return self._predict(X)
 
     @abstractmethod 
@@ -74,7 +76,40 @@ class GradientBoostingTree(ABC):
         pass
     
 class GradientBoostingClassifier(GradientBoostingTree):
-    def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 10, tolerance = 0.1, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 5, tolerance = 0.05, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        """A gradient boosting classifier suited for multiclass classification tasks that uses decision tree regressors as weak learners.
+
+        Parameters
+        ----------
+        n_estimators : int, default=50
+            The maximum number of weak learners in the ensemble.
+            
+        learning_rate : float, default=0.1
+            The learning rate shrinks the contribution of each weak learner.
+            
+        patience : int, default=10
+            The number of rounds without improvement before the training is stopped early.
+            
+        tolerance : float, default=0.1, bounds=[0, 1)
+            The minimum percentage improvement in the score over *patience* rounds to be considered as an improvement.
+        
+        Weak learner parameters:
+        
+        max_depth : int, default=15
+            The maximum depth of the tree, when no other stopping criteria are met.
+
+        min_samples_split : int, default=5
+            The minimum number of samples required to split an internal node.
+
+        min_samples_leaf : int, default=5
+            The minimum number of samples required to be at a leaf node.
+            A split point at any depth will only be considered if it leaves at least
+            min_samples_leaf training samples in each of the left and right branches.
+
+        num_thresholds : int, default=10
+            The number of thresholds to consider when finding the best split
+            for a numeric feature.
+        """
         self.estimators: list[list[DecisionTreeRegressor]] = []
         super().__init__(n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds)
     
@@ -141,7 +176,40 @@ class GradientBoostingClassifier(GradientBoostingTree):
         return exp / np.sum(exp, axis=1, keepdims=True)    
     
 class GradientBoostingRegressor(GradientBoostingTree):
-    def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 10, tolerance = 0.1, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 5, tolerance = 0.05, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        """A gradient boosting regressor decision tree regressors as weak learners.
+
+        Parameters
+        ----------
+        n_estimators : int, default=50
+            The maximum number of weak learners in the ensemble.
+            
+        learning_rate : float, default=0.1
+            The learning rate shrinks the contribution of each weak learner.
+            
+        patience : int, default=10
+            The number of rounds without improvement before the training is stopped early.
+            
+        tolerance : float, default=0.1, bounds=[0, 1)
+            The minimum percentage improvement in the score over *patience* rounds to be considered as an improvement.
+        
+        Weak learner parameters:
+        
+        max_depth : int, default=15
+            The maximum depth of the tree, when no other stopping criteria are met.
+
+        min_samples_split : int, default=5
+            The minimum number of samples required to split an internal node.
+
+        min_samples_leaf : int, default=5
+            The minimum number of samples required to be at a leaf node.
+            A split point at any depth will only be considered if it leaves at least
+            min_samples_leaf training samples in each of the left and right branches.
+
+        num_thresholds : int, default=10
+            The number of thresholds to consider when finding the best split
+            for a numeric feature.
+        """
         self.estimators: list[DecisionTreeRegressor] = []
         super().__init__(n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds)  
     

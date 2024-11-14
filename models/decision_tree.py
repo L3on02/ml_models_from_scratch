@@ -22,11 +22,11 @@ class DecisionTree(ABC):
         self.num_thresholds = num_thresholds
         
     def fit(self, X, Y):
-        '''creates a decision tree from the data'''
+        """creates a decision tree from the data"""
         self.tree = self._build_tree(0, X, Y)
         
     def predict(self, X):
-        '''makes a prediction on the input data'''
+        """makes a prediction on the input data"""
         return np.array([self._predict(input_data, self.tree) for input_data in X])
         
     def _build_tree(self, depth, X, Y) -> Node:
@@ -134,6 +134,25 @@ class DecisionTree(ABC):
     
 class DecisionTreeClassifier(DecisionTree):
     def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        """A decision tree classifier that extends the base DecisionTree class.
+
+        Parameters
+        ----------
+        max_depth : int, default=15
+            The maximum depth of the tree, when no other stopping criteria are met.
+
+        min_samples_split : int, default=5
+            The minimum number of samples required to split an internal node.
+
+        min_samples_leaf : int, default=5
+            The minimum number of samples required to be at a leaf node.
+            A split point at any depth will only be considered if it leaves at least
+            min_samples_leaf training samples in each of the left and right branches.
+
+        num_thresholds : int, default=10
+            The number of thresholds to consider when finding the best split
+            for a numeric feature.
+        """
         super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
                         
     # calculates the gini impurity for the classifier
@@ -172,6 +191,25 @@ class DecisionTreeClassifier(DecisionTree):
     
 class DecisionTreeRegressor(DecisionTree):
     def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+        """A decision tree regressor that extends the base DecisionTree class.
+
+        Parameters
+        ----------
+        max_depth : int, default=15
+            The maximum depth of the tree, when no other stopping criteria are met.
+
+        min_samples_split : int, default=5
+            The minimum number of samples required to split an internal node.
+
+        min_samples_leaf : int, default=5
+            The minimum number of samples required to be at a leaf node.
+            A split point at any depth will only be considered if it leaves at least
+            min_samples_leaf training samples in each of the left and right branches.
+
+        num_thresholds : int, default=10
+            The number of thresholds to consider when finding the best split
+            for a numeric feature.
+        """
         super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
         
     # calculates the Mean Squared Error for the regressor
