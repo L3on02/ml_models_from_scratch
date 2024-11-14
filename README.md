@@ -1,6 +1,6 @@
-# Implementing Decision Trees, Random Forests, and Gradient Boosting Trees from scratch
+# Implementing Decision Trees, Random Forests and Gradient Boosting Trees from scratch
 
-In this project, I will implement the basic algorithms for Decision Trees, Random Forests, and Gradient Boosting Trees from scratch, using nothing but NumPy and pandas. Using the sklearn library, I will compare the results of my implementations with those of the library to evaluate their performance.
+In this project, I will implement the algorithms behind Decision Trees, Random Forests and Gradient Boosting Trees from scratch, using nothing but numpy. In examples the performance of my implementations will be tested against a variety of datasets and ultimately compared to the performance of sklearn library's models for the same datasets.
 
 ## How to use
 
@@ -34,3 +34,6 @@ The project is structured as follows:
 The models folder contains the implementation of the Decision Tree, Random Forest, and Gradient Boosting Tree algorithms. In the examples folder there are practical uses of the models. There also are comparables with the sklearn library.
 
 The implementations are all structured in a abstract base class that contains the common methods for regression and classification. The specific methods for each model are implemented in the respective classes that inherit from the base class. All models are suited for both regression and (multiclass-) classification tasks.
+
+## Author
+Leon Maag
