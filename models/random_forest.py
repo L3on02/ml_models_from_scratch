@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from models.decision_tree import DecisionTree, DecisionTreeClassifier, DecisionTreeRegressor
+from models.decision_tree import DecisionTree, DecisionTreeClassifier, DecisionTreeRegressor, calculate_accuracy, calculate_r2
 
 class RandomForestTreeClassifier(DecisionTreeClassifier):
     def __init__(self, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
@@ -51,14 +51,19 @@ class RandomForest(ABC):
     @abstractmethod
     def _evaluate(self, X):
         pass
+    
+    @abstractmethod
+    def score(self, X, Y):
+        """calculates the accuracy of the model"""        
+
 
 class RandomForestClassifier(RandomForest):
-    def __init__(self, n_samples = 20, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators = 20, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         """A random forrest classifier that uses decision trees as weak learners.
 
         Parameters
         ----------
-        n_samples : int, default=20
+        n_estimators : int, default=20
             The number of weak learners in the ensemble.
         
         Weak learner parameters:
@@ -78,20 +83,26 @@ class RandomForestClassifier(RandomForest):
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
-        self.trees = [RandomForestTreeClassifier(max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_samples)]
+        self.trees = [RandomForestTreeClassifier(max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_estimators)]
     
     @staticmethod  
     def _evaluate(predictions):
         # -> _leaf_value for the classifier returns the most common label in a set of rows
         return np.array([RandomForestTreeClassifier._leaf_value(prediction) for prediction in predictions])
+    
+    def score(self, X, Y):
+        """calculates the accuracy of the model"""
+        Y_pred = self.predict(X)
+        return calculate_accuracy(Y, Y_pred)
+    
         
 class RandomForestRegressor(RandomForest):
-    def __init__(self, n_samples = 20, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators = 20, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         """A random forrest regressor that uses decision trees as weak learners.
 
         Parameters
         ----------
-        n_samples : int, default=20
+        n_estimators : int, default=20
             The number of weak learners in the ensemble.
         
         Weak learner parameters:
@@ -111,9 +122,14 @@ class RandomForestRegressor(RandomForest):
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
-        self.trees = [RandomForestTreeRegressor(max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_samples)]
+        self.trees = [RandomForestTreeRegressor(max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_estimators)]
     
     @staticmethod  
     def _evaluate(predictions):
         # -> _leaf_value for the regressor returns the mean of all values in a set of rows
         return np.array([RandomForestTreeRegressor._leaf_value(prediction) for prediction in predictions])
+
+    def score(self, X, Y):
+        """calculates the r2 score of the model"""
+        Y_pred = self.predict(X)
+        return calculate_r2(Y, Y_pred)

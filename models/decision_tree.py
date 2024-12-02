@@ -12,6 +12,17 @@ class Node:
     def is_leaf(self):
         return self.value is not None
     
+# Helper functions for calculating the performance of a model
+def calculate_r2(y_true, y_pred):
+    """Calculates the r2 score of a model"""
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    return 1 - ss_res / ss_tot
+
+def calculate_accuracy(y_true, y_pred):
+    """Calculates the accuracy of a model"""
+    return np.sum(y_true == y_pred) / len(y_true)
+    
     
 class DecisionTree(ABC):
     def __init__(self, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
@@ -129,8 +140,12 @@ class DecisionTree(ABC):
     @staticmethod 
     @abstractmethod
     def _leaf_value(Y):
-        pass
+        pass  
     
+    @abstractmethod
+    def score(self, X, Y):
+        """calculates the accuracy of the model"""
+        pass
     
 class DecisionTreeClassifier(DecisionTree):
     def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
@@ -187,6 +202,11 @@ class DecisionTreeClassifier(DecisionTree):
                 max_count = c
                 label = l
         return label
+    
+    def score(self, X, Y):
+        """calculates the accuracy of the model"""
+        Y_pred = self.predict(X)
+        return calculate_accuracy(Y, Y_pred)
             
     
 class DecisionTreeRegressor(DecisionTree):
@@ -235,3 +255,8 @@ class DecisionTreeRegressor(DecisionTree):
     @staticmethod
     def _leaf_value(Y):
         return np.mean(Y)
+
+    def score(self, X, Y):
+        """calculates the r2 score of the model"""
+        Y_pred = self.predict(X)
+        return calculate_r2(Y, Y_pred)

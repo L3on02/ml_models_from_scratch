@@ -1,10 +1,11 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 from abc import ABC, abstractmethod
-from models.decision_tree import DecisionTreeRegressor
+from models.decision_tree import DecisionTreeRegressor, calculate_accuracy, calculate_r2
 
 class GradientBoostingTree(ABC):
     def __init__(self, n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
+        self.estimators = []
         self.max_depth = max_depth
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
@@ -61,7 +62,7 @@ class GradientBoostingTree(ABC):
     
     @abstractmethod       
     def _predict(self, X):
-        pass    
+        pass
     
     @abstractmethod
     def _evaluate(self, X, Y):
@@ -73,6 +74,10 @@ class GradientBoostingTree(ABC):
     
     @abstractmethod
     def _train_iteration(self, X, Y, predictions):
+        pass
+    
+    @abstractmethod
+    def score(self, X, Y):
         pass
     
 class GradientBoostingClassifier(GradientBoostingTree):
@@ -173,7 +178,13 @@ class GradientBoostingClassifier(GradientBoostingTree):
         # then the exponential is divided by the sum of all exponentials in the row
         # since keepdims=True the division will be applied to each element individually
         # now each row will sum up to 1
-        return exp / np.sum(exp, axis=1, keepdims=True)    
+        return exp / np.sum(exp, axis=1, keepdims=True)
+    
+    def score(self, X, Y):
+        """calculates the accuracy of the model"""
+        Y_pred = self.predict(X)
+        return calculate_accuracy(Y, Y_pred)
+    
     
 class GradientBoostingRegressor(GradientBoostingTree):
     def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 5, tolerance = 0.05, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
@@ -253,3 +264,8 @@ class GradientBoostingRegressor(GradientBoostingTree):
         # calculates the mean squared error of the predictions
         return np.mean((Y - self.predict(X)) ** 2)    
     
+    def score(self, X, Y):
+        """calculates the r2 score of the model"""
+        Y_pred = self.predict(X)
+        return calculate_r2(Y, Y_pred)
+  
