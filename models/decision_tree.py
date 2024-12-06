@@ -114,7 +114,8 @@ class DecisionTree(ABC):
             
             # now determine possible split thresholds within that feature
             # => split once for every category or along equally spaced thresholds between the min and max value
-            thresholds = np.linspace(min(samples), max(samples), max(1, int(((self.max_depth -  np.sqrt(depth)) / self.max_depth) * self.num_thresholds))) if is_numeric else np.unique(samples)
+            # the number of threshold decreases with the depth of the tree
+            thresholds = np.linspace(min(samples), max(samples), max(1, int(((self.max_depth - np.sqrt(depth)) / self.max_depth) * self.num_thresholds))) if is_numeric else np.unique(samples)
             prev_score = float('inf')
             for threshold in thresholds:
                 score = self._score_at_threshold(samples, Y, threshold, is_numeric)

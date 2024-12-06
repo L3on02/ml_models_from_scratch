@@ -1,4 +1,4 @@
-import multiprocessing
+from multiprocessing import Pool, cpu_count
 from functools import partial
 import numpy as np
 
@@ -12,7 +12,7 @@ class GridSearchCV:
         self.model = model
         self.param_grid = param_grid
         self.cv = cv
-        self.n_jobs = n_jobs if n_jobs > 0 else multiprocessing.cpu_count() # uses all available cores if n_jobs is set to -1
+        self.n_jobs = n_jobs if n_jobs > 0 else cpu_count() # uses all available cores if n_jobs is set to -1
         self.best_params = None
 
     def fit(self, X, Y):
@@ -36,7 +36,7 @@ class GridSearchCV:
         if self.n_jobs == 1:
             return [self._cross_val_score_single(model, X, Y, i) for i in range(self.cv)]
         else:
-            with multiprocessing.Pool(self.n_jobs) as pool:
+            with Pool(self.n_jobs) as pool:
                 # pool.map automatically distributes the work to the available processors and collects the results in a list
                 # -> here the work is calling the cross_val_score_single method with the given model, input data and slice index
                 func = partial(self._cross_val_score_single, model, X, Y)
