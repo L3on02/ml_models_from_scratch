@@ -25,6 +25,7 @@ class RandomForestTreeRegressor(DecisionTreeRegressor):
     def _choose_split_indicies(self, X):
         return self.rng.choice(X.shape[1], max(1,int(np.sqrt(X.shape[1]))), replace=False)
     
+    
 class RandomForest(ABC):
     @abstractmethod
     def __init__(self, n_jobs) -> None:
@@ -38,12 +39,11 @@ class RandomForest(ABC):
         # -> some samples will occur multiple times, some not at all (=> replace=True means duplicates are possible)
         # extracts the rows from the dataset by index which are stored in the indices array
         if self.n_jobs == 1:
-            for tree in self.trees:
-                self._fit_estimator((tree, X, Y))
+            for idx, tree in enumerate(self.trees):
+                self._fit_estimator((tree, X, Y, idx))
         else:
             with Pool(self.n_jobs) as pool:
-                fitted_trees = pool.map(self._fit_estimator, [(tree, X, Y) for tree in self.trees])       
-            self.trees = fitted_trees         
+                self.trees = pool.map(self._fit_estimator, [(tree, X, Y, idx) for idx, tree in enumerate(self.trees)])        
         
     def predict(self, X):
         """makes a prediction on the input data"""
@@ -51,13 +51,14 @@ class RandomForest(ABC):
         # -> the transposition is necessary to get the predictions for every input data in a single row
         predictions = np.array([tree.predict(X) for tree in self.trees]).T
         # returns the mean or most common prediction among each trees prediction for each sample in the input data
-        return self._evaluate(predictions)
+        return self._evaluate(predictions)    
     
-    
-    def _fit_estimator(self, args: tuple[DecisionTree, np.ndarray, np.ndarray]):
-        tree, X, Y = args
+    def _fit_estimator(self, args: tuple[DecisionTree, np.ndarray, np.ndarray, int]):
+        tree, X, Y, seed = args
+        # every tree gets its own random number generator with a unique seed to ensure different samples
+        rng = np.random.default_rng(seed)
         # extracts the rows from the dataset by index which are stored in the indices array
-        indices = self.rng.choice(X.shape[0], size=X.shape[0], replace=True)
+        indices = rng.choice(X.shape[0], size=X.shape[0], replace=True)
         X_subset, Y_subset = X[indices], Y[indices]
         tree.fit(X_subset, Y_subset)
         return tree
