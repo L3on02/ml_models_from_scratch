@@ -184,14 +184,13 @@ class DecisionTreeClassifier(DecisionTree):
     @staticmethod
     def _leaf_value(Y):
         counts = {}
-        for p in Y:
-            counts[p] = counts.get(p,0) + 1
         max_count = 0
         label = None
-        for l, c in counts.items():
-            if c > max_count:
-                max_count = c
-                label = l
+        for p in Y:
+            counts[p] = counts.get(p,0) + 1
+            if counts[p] > max_count:
+                max_count = counts[p]
+                label = p
         return label
           
     
