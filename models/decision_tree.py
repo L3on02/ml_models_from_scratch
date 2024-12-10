@@ -1,4 +1,5 @@
-from abc import ABC, abstractmethod
+from models.base_estimator import BaseEstimator
+from abc import abstractmethod
 import numpy as np
 
 class Node:
@@ -10,21 +11,9 @@ class Node:
         self.value = value
         
     def is_leaf(self):
-        return self.value is not None
+        return self.value is not None    
     
-# Helper functions for calculating the performance of a model
-def calculate_r2(y_true, y_pred):
-    """Calculates the r2 score of a model"""
-    ss_res = np.sum((y_true - y_pred) ** 2)
-    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
-    return 1 - ss_res / ss_tot
-
-def calculate_accuracy(y_true, y_pred):
-    """Calculates the accuracy of a model"""
-    return np.sum(y_true == y_pred) / len(y_true)
-    
-    
-class DecisionTree(ABC):
+class DecisionTree(BaseEstimator):
     def __init__(self, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
         self.tree = None
         self.max_depth = max_depth
@@ -39,7 +28,7 @@ class DecisionTree(ABC):
     def predict(self, X):
         """makes a prediction on the input data"""
         return np.array([self._predict(input_data, self.tree) for input_data in X])
-        
+    
     def _build_tree(self, depth, X, Y) -> Node:
         # check if max depth is reached -> calculate leaf value for regression or classification (implemented by subclasses)
         # or if the node is pure, return a leaf node with the value/label of that class
@@ -143,10 +132,6 @@ class DecisionTree(ABC):
     def _leaf_value(Y):
         pass  
     
-    @abstractmethod
-    def score(self, X, Y):
-        """calculates the accuracy of the model"""
-        pass
     
 class DecisionTreeClassifier(DecisionTree):
     def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
@@ -154,23 +139,28 @@ class DecisionTreeClassifier(DecisionTree):
 
         Parameters
         ----------
-        max_depth : int, default=15
+        `max_depth` : int, default=15
             The maximum depth of the tree, when no other stopping criteria are met.
 
-        min_samples_split : int, default=5
+        `min_samples_split` : int, default=5
             The minimum number of samples required to split an internal node.
 
-        min_samples_leaf : int, default=5
+        `min_samples_leaf` : int, default=5
             The minimum number of samples required to be at a leaf node.
             A split point at any depth will only be considered if it leaves at least
             min_samples_leaf training samples in each of the left and right branches.
 
-        num_thresholds : int, default=10
+        `num_thresholds` : int, default=10
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
         super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
                         
+    def score(self, X, Y):
+        """calculates the accuracy of the model"""
+        Y_pred = self.predict(X)
+        return BaseEstimator._calculate_accuracy(Y, Y_pred)
+    
     # calculates the gini impurity for the classifier
     def _score_split(self, left_Y, right_Y):
         left_sample_count = len(left_Y)
@@ -203,12 +193,7 @@ class DecisionTreeClassifier(DecisionTree):
                 max_count = c
                 label = l
         return label
-    
-    def score(self, X, Y):
-        """calculates the accuracy of the model"""
-        Y_pred = self.predict(X)
-        return calculate_accuracy(Y, Y_pred)
-            
+          
     
 class DecisionTreeRegressor(DecisionTree):
     def __init__(self, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
@@ -216,23 +201,28 @@ class DecisionTreeRegressor(DecisionTree):
 
         Parameters
         ----------
-        max_depth : int, default=15
+        `max_depth` : int, default=15
             The maximum depth of the tree, when no other stopping criteria are met.
 
-        min_samples_split : int, default=5
+        `min_samples_split` : int, default=5
             The minimum number of samples required to split an internal node.
 
-        min_samples_leaf : int, default=5
+        `min_samples_leaf` : int, default=5
             The minimum number of samples required to be at a leaf node.
             A split point at any depth will only be considered if it leaves at least
             min_samples_leaf training samples in each of the left and right branches.
 
-        num_thresholds : int, default=10
+        `num_thresholds` : int, default=10
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
         super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
         
+    def score(self, X, Y):
+        """calculates the r2 score of the model"""
+        Y_pred = self.predict(X)
+        return BaseEstimator._calculate_r2(Y, Y_pred)
+    
     # calculates the Mean Squared Error for the regressor
     def _score_split(self, left_Y, right_Y):
         left_sample_count = len(left_Y)
@@ -248,7 +238,6 @@ class DecisionTreeRegressor(DecisionTree):
         # calculates MSE for each of the two splits. If one split is empty, return inf to indicate bad split
         left_mse = sum((mean_left - l) ** 2 for l in left_Y) / left_sample_count if left_sample_count > 0 else float('inf')
         right_mse = sum((mean_right - r) ** 2 for r in right_Y) / right_sample_count if right_sample_count > 0 else float('inf')
-        
         # averages the right and left mse to return a total evaluation of the split
         return left_weight * left_mse + right_weight * right_mse
     
@@ -257,7 +246,3 @@ class DecisionTreeRegressor(DecisionTree):
     def _leaf_value(Y):
         return np.mean(Y)
 
-    def score(self, X, Y):
-        """calculates the r2 score of the model"""
-        Y_pred = self.predict(X)
-        return calculate_r2(Y, Y_pred)

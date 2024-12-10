@@ -1,3 +1,5 @@
+import inspect
+from models.base_estimator import BaseEstimator
 from multiprocessing import Pool, cpu_count
 from functools import partial
 import numpy as np
@@ -8,18 +10,41 @@ import numpy as np
 
 class GridSearchCV:
     """Grid search with cross validation for hyperparameter optimization"""
-    def __init__(self, model, param_grid, cv=5, n_jobs=-1) -> None:
+    def __init__(self, model: BaseEstimator, param_grid: dict, cv=5, n_jobs=-1) -> None:
+        """
+        Initializes the GridSearchCV object with the given model, parameter grid, cross-validation strategy, and number of jobs.
+        
+        Parameters
+        ----------
+        `model` : BaseEstimator (required)
+            The machine learning model class to be optimized
+        
+        `param_grid` : dict (required)
+            Dictionary with parameters names (str) as keys and lists of parameter settings to try as values.
+            
+        `cv` : int, default=5
+            Number of folds in cross-validation. Defaults to 5.
+            
+        `n_jobs` : int, default=-1
+            Number of jobs to run in parallel. Defaults to -1, which means using all available cores.
+        """
+        
         self.model = model
         self.param_grid = param_grid
         self.cv = cv
         self.n_jobs = n_jobs if n_jobs > 0 else cpu_count() # uses all available cores if n_jobs is set to -1
         self.best_params = None
+        self.best_model = None
+        self.model_supports_parallel = "n_jobs" in inspect.signature(self.model.__init__).parameters.keys()
 
     def fit(self, X, Y):
         best_score = -np.inf
         best_params = None
+        
         for params in self.param_grid:
             try:
+                if self.model_supports_parallel:
+                    params["n_jobs"] = self.n_jobs
                 # tries to create a model with the given parameters
                 model = self.model(**params)
             except TypeError:
@@ -31,9 +56,24 @@ class GridSearchCV:
                 best_params = params
         self.best_score = best_score
         self.best_params = best_params
+        
+        if best_params is not None:
+            # check if the model supports parallel processing
+            if self.model_supports_parallel:
+                best_params["n_jobs"] = self.n_jobs
+                
+            self.best_model = self.model(**best_params)
+            self.best_model.fit(X, Y)
+        
+    def predict(self, X):
+        if self.best_model is None:
+            raise ValueError("Model has not been fitted yet")
+        return self.best_model.predict(X)
 
     def _cross_val_score(self, model, X, Y):
-        if self.n_jobs == 1:
+        # if model itself is suited for parellel processing, we let it handle the parallelization internally
+        # otherwise we use the Pool class to distribute the work to the available processors
+        if self.n_jobs == 1 or self.model_supports_parallel:
             return [self._cross_val_score_single(model, X, Y, i) for i in range(self.cv)]
         else:
             with Pool(self.n_jobs) as pool:

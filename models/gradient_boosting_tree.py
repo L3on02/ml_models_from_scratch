@@ -1,9 +1,10 @@
+from models.base_estimator import BaseEstimator
+from models.decision_tree import DecisionTreeRegressor
 import numpy as np
 from sklearn.model_selection import train_test_split
 from abc import ABC, abstractmethod
-from models.decision_tree import DecisionTreeRegressor, calculate_accuracy, calculate_r2
 
-class GradientBoostingTree(ABC):
+class GradientBoostingTree(BaseEstimator):
     def __init__(self, n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
         self.estimators = []
         self.max_depth = max_depth
@@ -76,47 +77,48 @@ class GradientBoostingTree(ABC):
     def _train_iteration(self, X, Y, predictions):
         pass
     
-    @abstractmethod
-    def score(self, X, Y):
-        pass
-    
 class GradientBoostingClassifier(GradientBoostingTree):
     def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 5, tolerance = 0.05, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         """A gradient boosting classifier suited for multiclass classification tasks that uses decision tree regressors as weak learners.
 
         Parameters
         ----------
-        n_estimators : int, default=50
+        `n_estimators` : int, default=50
             The maximum number of weak learners in the ensemble.
             
-        learning_rate : float, default=0.1
+        `learning_rate` : float, default=0.1
             The learning rate shrinks the contribution of each weak learner.
             
-        patience : int, default=10
+        `patience` : int, default=10
             The number of rounds without improvement before the training is stopped early.
             
-        tolerance : float, default=0.1, bounds=[0, 1)
+        `tolerance` : float, default=0.1, bounds=[0, 1)
             The minimum percentage improvement in the score over *patience* rounds to be considered as an improvement.
         
         Weak learner parameters:
         
-        max_depth : int, default=15
+        `max_depth` : int, default=15
             The maximum depth of the tree, when no other stopping criteria are met.
 
-        min_samples_split : int, default=5
+        `min_samples_split` : int, default=5
             The minimum number of samples required to split an internal node.
 
-        min_samples_leaf : int, default=5
+        `min_samples_leaf` : int, default=5
             The minimum number of samples required to be at a leaf node.
             A split point at any depth will only be considered if it leaves at least
             min_samples_leaf training samples in each of the left and right branches.
 
-        num_thresholds : int, default=10
+        `num_thresholds` : int, default=10
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
         self.estimators: list[list[DecisionTreeRegressor]] = []
         super().__init__(n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds)
+    
+    def score(self, X, Y):
+        """calculates the accuracy of the model"""
+        Y_pred = self.predict(X)
+        return BaseEstimator._calculate_accuracy(Y, Y_pred)
     
     def _train_iteration(self, X, Y, predictions):
         iteration_estimator = []
@@ -180,11 +182,6 @@ class GradientBoostingClassifier(GradientBoostingTree):
         # now each row will sum up to 1
         return exp / np.sum(exp, axis=1, keepdims=True)
     
-    def score(self, X, Y):
-        """calculates the accuracy of the model"""
-        Y_pred = self.predict(X)
-        return calculate_accuracy(Y, Y_pred)
-    
     
 class GradientBoostingRegressor(GradientBoostingTree):
     def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 5, tolerance = 0.05, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
@@ -192,37 +189,42 @@ class GradientBoostingRegressor(GradientBoostingTree):
 
         Parameters
         ----------
-        n_estimators : int, default=50
+        `n_estimators` : int, default=50
             The maximum number of weak learners in the ensemble.
             
-        learning_rate : float, default=0.1
+        `learning_rate` : float, default=0.1
             The learning rate shrinks the contribution of each weak learner.
             
-        patience : int, default=10
+        `patience` : int, default=10
             The number of rounds without improvement before the training is stopped early.
             
-        tolerance : float, default=0.1, bounds=[0, 1)
+        `tolerance` : float, default=0.1, bounds=[0, 1)
             The minimum percentage improvement in the score over *patience* rounds to be considered as an improvement.
         
         Weak learner parameters:
         
-        max_depth : int, default=15
+        `max_depth` : int, default=15
             The maximum depth of the tree, when no other stopping criteria are met.
 
-        min_samples_split : int, default=5
+        `min_samples_split` : int, default=5
             The minimum number of samples required to split an internal node.
 
-        min_samples_leaf : int, default=5
+        `min_samples_leaf` : int, default=5
             The minimum number of samples required to be at a leaf node.
             A split point at any depth will only be considered if it leaves at least
             min_samples_leaf training samples in each of the left and right branches.
 
-        num_thresholds : int, default=10
+        `num_thresholds` : int, default=10
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
         self.estimators: list[DecisionTreeRegressor] = []
         super().__init__(n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds)  
+
+    def score(self, X, Y):
+        """calculates the r2 score of the model"""
+        Y_pred = self.predict(X)
+        return BaseEstimator._calculate_r2(Y, Y_pred)
     
     def _train_iteration(self, X, Y, predictions):
         # first the residuals are computed as the negative gradient of the loss function
@@ -238,13 +240,11 @@ class GradientBoostingRegressor(GradientBoostingTree):
         
         # update the predictions with the new estimator multiplied by the learning rate
         new_predictions = predictions + self.learning_rate * iteration_estimator.predict(X)
-        
         return iteration_estimator, new_predictions
     
     def _predict(self, X):  
         # initialize every prediction with the original initial_prediction made for the first estimator during fitting
         predictions = np.full(X.shape[0], self.initial_prediction)
-        
         # now apply the prediction of every estimator in the ensemble to each prediction
         for estimator in self.estimators:
             predictions += self.learning_rate * estimator.predict(X)
@@ -264,8 +264,3 @@ class GradientBoostingRegressor(GradientBoostingTree):
         # calculates the mean squared error of the predictions
         return np.mean((Y - self.predict(X)) ** 2)    
     
-    def score(self, X, Y):
-        """calculates the r2 score of the model"""
-        Y_pred = self.predict(X)
-        return calculate_r2(Y, Y_pred)
-  

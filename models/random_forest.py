@@ -1,8 +1,8 @@
+from models.base_estimator import BaseEstimator
+from models.decision_tree import DecisionTree, DecisionTreeClassifier, DecisionTreeRegressor
 import numpy as np
-from abc import ABC, abstractmethod
-from models.decision_tree import DecisionTree, DecisionTreeClassifier, DecisionTreeRegressor, calculate_accuracy, calculate_r2
+from abc import abstractmethod
 from multiprocessing import Pool, cpu_count
-from functools import partial
 
 class RandomForestTreeClassifier(DecisionTreeClassifier):
     def __init__(self, rng, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
@@ -26,7 +26,7 @@ class RandomForestTreeRegressor(DecisionTreeRegressor):
         return self.rng.choice(X.shape[1], max(1,int(np.sqrt(X.shape[1]))), replace=False)
     
     
-class RandomForest(ABC):
+class RandomForest(BaseEstimator):
     @abstractmethod
     def __init__(self, n_jobs) -> None:
         self.trees: list[DecisionTree] = []
@@ -63,14 +63,9 @@ class RandomForest(ABC):
         tree.fit(X_subset, Y_subset)
         return tree
     
-    @staticmethod
     @abstractmethod
     def _evaluate(self, X):
-        pass
-    
-    @abstractmethod
-    def score(self, X, Y):
-        """calculates the accuracy of the model"""        
+        pass       
 
 
 class RandomForestClassifier(RandomForest):
@@ -79,29 +74,29 @@ class RandomForestClassifier(RandomForest):
 
         Parameters
         ----------
-        n_jobs : int, default=-1
+        `n_jobs` : int, default=-1
             The number of jobs to run in parallel. -1 means using all available processors.
         
-        n_estimators : int, default=20
+        `n_estimators` : int, default=20
             The number of weak learners in the ensemble.
             
-        random_seed : int, default=42
+        `random_seed` : int, default=42
             The seed used for the random number generator.
         
         Weak learner parameters:
         
-        max_depth : int, default=15
+        `max_depth` : int, default=15
             The maximum depth of the tree, when no other stopping criteria are met.
 
-        min_samples_split : int, default=5
+        `min_samples_split` : int, default=5
             The minimum number of samples required to split an internal node.
 
-        min_samples_leaf : int, default=5
+        `min_samples_leaf` : int, default=5
             The minimum number of samples required to be at a leaf node.
             A split point at any depth will only be considered if it leaves at least
             min_samples_leaf training samples in each of the left and right branches.
 
-        num_thresholds : int, default=10
+        `num_thresholds` : int, default=10
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
@@ -109,15 +104,14 @@ class RandomForestClassifier(RandomForest):
         self.rng = np.random.default_rng(random_seed)
         self.trees = [RandomForestTreeClassifier(self.rng, max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_estimators)]
     
-    @staticmethod  
-    def _evaluate(predictions):
-        # -> _leaf_value for the classifier returns the most common label in a set of rows
-        return np.array([RandomForestTreeClassifier._leaf_value(prediction) for prediction in predictions])
-    
     def score(self, X, Y):
         """calculates the accuracy of the model"""
         Y_pred = self.predict(X)
-        return calculate_accuracy(Y, Y_pred)
+        return BaseEstimator._calculate_accuracy(Y, Y_pred)
+    
+    def _evaluate(predictions):
+        # -> _leaf_value for the classifier returns the most common label in a set of rows
+        return np.array([RandomForestTreeClassifier._leaf_value(prediction) for prediction in predictions])
     
         
 class RandomForestRegressor(RandomForest):
@@ -126,42 +120,41 @@ class RandomForestRegressor(RandomForest):
 
         Parameters
         ----------
-        n_jobs : int, default=-1
+        `n_jobs` : int, default=-1
             The number of jobs to run in parallel. -1 means using all available processors.
         
-        n_estimators : int, default=20
+        `n_estimators` : int, default=20
             The number of weak learners in the ensemble.
             
-        random_seed : int, default=42
+        `random_seed` : int, default=42
             The seed used for the random number generator.
         
         Weak learner parameters:
         
-        max_depth : int, default=15
+        `max_depth` : int, default=15
             The maximum depth of the tree, when no other stopping criteria are met.
 
-        min_samples_split : int, default=5
+        `min_samples_split` : int, default=5
             The minimum number of samples required to split an internal node.
 
-        min_samples_leaf : int, default=5
+        `min_samples_leaf` : int, default=5
             The minimum number of samples required to be at a leaf node.
             A split point at any depth will only be considered if it leaves at least
             min_samples_leaf training samples in each of the left and right branches.
 
-        num_thresholds : int, default=10
+        `num_thresholds` : int, default=10
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
         super().__init__(n_jobs)
         self.rng = np.random.default_rng(random_seed)
         self.trees = [RandomForestTreeRegressor(self.rng, max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_estimators)]
-    
-    @staticmethod  
-    def _evaluate(predictions):
-        # -> _leaf_value for the regressor returns the mean of all values in a set of rows
-        return np.array([RandomForestTreeRegressor._leaf_value(prediction) for prediction in predictions])
-
+   
     def score(self, X, Y):
         """calculates the r2 score of the model"""
         Y_pred = self.predict(X)
-        return calculate_r2(Y, Y_pred)
+        return BaseEstimator._calculate_r2(Y, Y_pred)
+    
+    def _evaluate(predictions):
+        # -> _leaf_value for the regressor returns the mean of all values in a set of rows
+        return np.array([RandomForestTreeRegressor._leaf_value(prediction) for prediction in predictions])
