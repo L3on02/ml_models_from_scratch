@@ -12,7 +12,7 @@ A similar approach can be used to install the required libraries for any other P
 ```python
 from models.decision_tree import DecisionTreeClassifier
 ```
-All models have the same simple interface that consists of three methods: `fit()`, `predict()` and `score()`. While `fit()` takes the training data and the target labels as arguments and fits the model to the data, `predict()` receives (a set of) samples and returns the models prediction on those values. All models can be tuned using the hyperparameters that are passed as arguments to the constructor. Depending on the model, the hyperparameters may vary, explainations are available as a docstring in each constructor. Ultimately, the `score()` method can be used to evaluate the model's performance on a given dataset and is neccessary to work with the grid search cross validation implementation in the `utils` folder.
+All models inherit the same simple interface from the `BaseEstimator` class that consists of three methods: `fit()`, `predict()` and `score()`. While `fit()` takes the training data and the target labels as arguments and fits the model to the data, `predict()` receives (a set of) samples and returns the models prediction on those values. All models can be tuned using the hyperparameters that are passed as arguments to the constructor. Depending on the model, the hyperparameters may vary, explainations are available as a docstring in each constructor. Ultimately, the `score()` method can be used to evaluate the model's performance on a given dataset and is neccessary to work with the grid search cross validation implementation in the `utils` folder.
 
 ## Structure of the project
 
@@ -25,6 +25,7 @@ The project is structured as follows:
 │   ├── gradient_boosting_tree_example.ipynb
 │   └── random_forest_example.ipynb
 ├── models
+│   ├── base_estimator.py
 │   ├── decision_tree.py
 │   ├── gradient_boosting_tree.py
 │   └── random_forest.py
