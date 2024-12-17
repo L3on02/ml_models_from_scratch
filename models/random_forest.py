@@ -109,7 +109,7 @@ class RandomForestClassifier(RandomForest):
         Y_pred = self.predict(X)
         return BaseEstimator._calculate_accuracy(Y, Y_pred)
     
-    def _evaluate(predictions):
+    def _evaluate(self, predictions):
         # -> _leaf_value for the classifier returns the most common label in a set of rows
         return np.array([RandomForestTreeClassifier._leaf_value(prediction) for prediction in predictions])
     
@@ -155,6 +155,6 @@ class RandomForestRegressor(RandomForest):
         Y_pred = self.predict(X)
         return BaseEstimator._calculate_r2(Y, Y_pred)
     
-    def _evaluate(predictions):
+    def _evaluate(self, predictions):
         # -> _leaf_value for the regressor returns the mean of all values in a set of rows
         return np.array([RandomForestTreeRegressor._leaf_value(prediction) for prediction in predictions])
