@@ -30,7 +30,8 @@ The project is structured as follows:
 │   └── random_forest.py
 ├── requirements.txt
 └── utils
-    └── grid_search_cv.py
+    ├── grid_search_cv.py
+    └── reports.py
 ```
 The models folder contains the implementation of the Decision Tree, Random Forest, and Gradient Boosting Tree algorithms. In the examples folder there are practical uses of the models that draw comparisons between the models and the `scikit-learn` implementations. The utils folder contains a custom grid search cross validation implementation that can be used to tune the hyperparameters of the models.
 
