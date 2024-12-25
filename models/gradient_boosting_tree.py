@@ -118,7 +118,7 @@ class GradientBoostingClassifier(GradientBoostingTree):
     def score(self, X, Y):
         """calculates the accuracy of the model"""
         Y_pred = self.predict(X)
-        return BaseEstimator._calculate_accuracy(Y, Y_pred)
+        return self._calculate_accuracy(Y, Y_pred)
     
     def _train_iteration(self, X, Y, predictions):
         iteration_estimator = []
@@ -224,7 +224,7 @@ class GradientBoostingRegressor(GradientBoostingTree):
     def score(self, X, Y):
         """calculates the r2 score of the model"""
         Y_pred = self.predict(X)
-        return BaseEstimator._calculate_r2(Y, Y_pred)
+        return self._calculate_r2(Y, Y_pred)
     
     def _train_iteration(self, X, Y, predictions):
         # first the residuals are computed as the negative gradient of the loss function

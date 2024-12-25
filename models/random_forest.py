@@ -19,7 +19,7 @@ class RandomForestTreeClassifier(DecisionTreeClassifier):
 class RandomForestTreeRegressor(DecisionTreeRegressor):
     def __init__(self, rng, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
         super().__init__(max_depth, min_samples_split, min_samples_leaf, num_thresholds)
-        self.rng= rng
+        self.rng = rng
     
     # same function as in the Classifier
     def _choose_split_indicies(self, X):
@@ -28,9 +28,10 @@ class RandomForestTreeRegressor(DecisionTreeRegressor):
     
 class RandomForest(BaseEstimator):
     @abstractmethod
-    def __init__(self, n_jobs) -> None:
+    def __init__(self, n_jobs, n_samples) -> None:
         self.trees: list[DecisionTree] = []
         self.rng = None
+        self.n_samples = max(0, min(n_samples, 1)) # clamp n_samples between 0 and 1
         self.n_jobs = cpu_count() if n_jobs == -1 else max(1,min(n_jobs, cpu_count()))
     
     def fit(self, X, Y):
@@ -69,13 +70,16 @@ class RandomForest(BaseEstimator):
 
 
 class RandomForestClassifier(RandomForest):
-    def __init__(self, n_jobs = -1, n_estimators = 20, random_seed = 42, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_jobs = -1, n_samples = 0.75, n_estimators = 20, random_seed = 42, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         """A random forrest classifier that uses decision trees as weak learners.
 
         Parameters
         ----------
         `n_jobs` : int, default=-1
             The number of jobs to run in parallel. -1 means using all available processors.
+            
+        `n_samples` : float, default=0.75
+            The fraction of samples to use for training each tree.
         
         `n_estimators` : int, default=20
             The number of weak learners in the ensemble.
@@ -100,14 +104,14 @@ class RandomForestClassifier(RandomForest):
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
-        super().__init__(n_jobs)
+        super().__init__(n_jobs, n_samples)
         self.rng = np.random.default_rng(random_seed)
         self.trees = [RandomForestTreeClassifier(self.rng, max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_estimators)]
     
     def score(self, X, Y):
         """calculates the accuracy of the model"""
         Y_pred = self.predict(X)
-        return BaseEstimator._calculate_accuracy(Y, Y_pred)
+        return self._calculate_accuracy(Y, Y_pred)
     
     def _evaluate(self, predictions):
         # -> _leaf_value for the classifier returns the most common label in a set of rows
@@ -115,13 +119,16 @@ class RandomForestClassifier(RandomForest):
     
         
 class RandomForestRegressor(RandomForest):
-    def __init__(self, n_jobs = -1, n_estimators = 20, random_seed = 42, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_jobs = -1, n_samples = 0.75, n_estimators = 20, random_seed = 42, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         """A random forrest regressor that uses decision trees as weak learners.
 
         Parameters
         ----------
         `n_jobs` : int, default=-1
             The number of jobs to run in parallel. -1 means using all available processors.
+            
+        `n_samples` : float, default=0.75
+            The fraction of samples to use for training each tree.
         
         `n_estimators` : int, default=20
             The number of weak learners in the ensemble.
@@ -146,14 +153,14 @@ class RandomForestRegressor(RandomForest):
             The number of thresholds to consider when finding the best split
             for a numeric feature.
         """
-        super().__init__(n_jobs)
+        super().__init__(n_jobs, n_samples)
         self.rng = np.random.default_rng(random_seed)
         self.trees = [RandomForestTreeRegressor(self.rng, max_depth, min_samples_split, min_samples_leaf, num_thresholds) for _ in range(n_estimators)]
    
     def score(self, X, Y):
         """calculates the r2 score of the model"""
         Y_pred = self.predict(X)
-        return BaseEstimator._calculate_r2(Y, Y_pred)
+        return self._calculate_r2(Y, Y_pred)
     
     def _evaluate(self, predictions):
         # -> _leaf_value for the regressor returns the mean of all values in a set of rows

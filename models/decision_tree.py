@@ -159,7 +159,7 @@ class DecisionTreeClassifier(DecisionTree):
     def score(self, X, Y):
         """calculates the accuracy of the model"""
         Y_pred = self.predict(X)
-        return BaseEstimator._calculate_accuracy(Y, Y_pred)
+        return self._calculate_accuracy(Y, Y_pred)
     
     # calculates the gini impurity for the classifier
     def _score_split(self, left_Y, right_Y):
@@ -220,7 +220,7 @@ class DecisionTreeRegressor(DecisionTree):
     def score(self, X, Y):
         """calculates the r2 score of the model"""
         Y_pred = self.predict(X)
-        return BaseEstimator._calculate_r2(Y, Y_pred)
+        return self._calculate_r2(Y, Y_pred)
     
     # calculates the Mean Squared Error for the regressor
     def _score_split(self, left_Y, right_Y):
