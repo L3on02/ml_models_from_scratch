@@ -13,7 +13,7 @@ class RandomForestTreeClassifier(DecisionTreeClassifier):
     def _choose_split_indicies(self, X):
         # randomly selects a fixed size (sqrt(total amount of features)) of features to use for the split
         # -> X.shape[1] returns the amount of columns from wich we select between 1 and all. Replace false prevents duplicate selections
-        return np.random.RandomState(42).choice(X.shape[1], max(1,int(np.sqrt(X.shape[1]))), replace=False)
+        return self.rng.choice(X.shape[1], max(1,int(np.sqrt(X.shape[1]))), replace=False)
         
     
 class RandomForestTreeRegressor(DecisionTreeRegressor):
@@ -59,7 +59,7 @@ class RandomForest(BaseEstimator):
         # every tree gets its own random number generator with a unique seed to ensure different samples
         rng = np.random.default_rng(seed)
         # extracts the rows from the dataset by index which are stored in the indices array
-        indices = rng.choice(X.shape[0], size=X.shape[0], replace=True)
+        indices = rng.choice(X.shape[0], size=int(X.shape[0] * self.n_samples), replace=True)
         X_subset, Y_subset = X[indices], Y[indices]
         tree.fit(X_subset, Y_subset)
         return tree
@@ -70,7 +70,7 @@ class RandomForest(BaseEstimator):
 
 
 class RandomForestClassifier(RandomForest):
-    def __init__(self, n_jobs = -1, n_samples = 0.75, n_estimators = 20, random_seed = 42, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_jobs = -1, n_samples = 0.9, n_estimators = 50, random_seed = 42, max_depth = 15, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         """A random forrest classifier that uses decision trees as weak learners.
 
         Parameters
