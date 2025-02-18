@@ -5,13 +5,14 @@ from sklearn.model_selection import train_test_split
 from abc import ABC, abstractmethod
 
 class GradientBoostingTree(BaseEstimator):
-    def __init__(self, n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
+    def __init__(self, n_estimators, learning_rate, patience, tolerance, random_state, max_depth, min_samples_split, min_samples_leaf, num_thresholds) -> None:
         self.estimators = []
         self.max_depth = max_depth
         self.n_estimators = n_estimators
         self.learning_rate = learning_rate
         self.patience = patience
         self.tolerance = tolerance
+        self.random_state = random_state
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.num_thresholds = num_thresholds
@@ -21,7 +22,7 @@ class GradientBoostingTree(BaseEstimator):
         # preprocess the data if necessary
         Y = self._preprocess(Y)
                 
-        X_train, X_validation, Y_train, Y_validation = train_test_split(X, Y, test_size=0.2)
+        X_train, X_validation, Y_train, Y_validation = train_test_split(X, Y, test_size=0.2, random_state=self.random_state)
         
         # the GBT prediction needs to be initialized with a starting value,
         # in the case of regression we use the mean of the target values
@@ -79,7 +80,7 @@ class GradientBoostingTree(BaseEstimator):
         pass
     
 class GradientBoostingClassifier(GradientBoostingTree):
-    def __init__(self, n_estimators = 100, learning_rate = 0.15, patience = 5, tolerance = 1e-4, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators=100, learning_rate=0.15, patience=5, tolerance=1e-4, random_state=41, max_depth=10, min_samples_split=5, min_samples_leaf=5, num_thresholds=10) -> None:
         """A gradient boosting classifier suited for multiclass classification tasks that uses decision tree regressors as weak learners.
 
         Parameters
@@ -95,6 +96,9 @@ class GradientBoostingClassifier(GradientBoostingTree):
             
         `tolerance` : float, default=1e-4, bounds=[0, inf)
             The minimum improvement in the score over *patience* rounds to be considered as an improvement.
+            
+        `random_state` : int, default=42
+            The seed used by the random number generator for the train-test split.
         
         Weak learner parameters:
         
@@ -114,7 +118,7 @@ class GradientBoostingClassifier(GradientBoostingTree):
             for a numeric feature.
         """
         self.estimators: list[list[DecisionTreeRegressor]] = []
-        super().__init__(n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds)
+        super().__init__(n_estimators, learning_rate, patience, tolerance, random_state, max_depth, min_samples_split, min_samples_leaf, num_thresholds)
     
     def score(self, X, Y):
         """calculates the accuracy of the model"""
@@ -185,7 +189,7 @@ class GradientBoostingClassifier(GradientBoostingTree):
     
     
 class GradientBoostingRegressor(GradientBoostingTree):
-    def __init__(self, n_estimators = 100, learning_rate = 0.15, patience = 5, tolerance = 1e-4, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators=100, learning_rate=0.15, patience=5, tolerance=1e-4, random_state=41, max_depth=10, min_samples_split=5, min_samples_leaf=5, num_thresholds=10) -> None:
         """A gradient boosting regressor decision tree regressors as weak learners.
 
         Parameters
@@ -201,6 +205,9 @@ class GradientBoostingRegressor(GradientBoostingTree):
             
         `tolerance` : float, default=1e-4, bounds=[0, inf)
             The minimum improvement in the score over *patience* rounds to be considered as an improvement.
+        
+        `random_state` : int, default=42
+            The seed used by the random number generator for the train-test split.
         
         Weak learner parameters:
         
@@ -220,7 +227,7 @@ class GradientBoostingRegressor(GradientBoostingTree):
             for a numeric feature.
         """
         self.estimators: list[DecisionTreeRegressor] = []
-        super().__init__(n_estimators, learning_rate, patience, tolerance, max_depth, min_samples_split, min_samples_leaf, num_thresholds)  
+        super().__init__(n_estimators, learning_rate, patience, tolerance, random_state, max_depth, min_samples_split, min_samples_leaf, num_thresholds)  
 
     def score(self, X, Y):
         """calculates the r2 score of the model"""
