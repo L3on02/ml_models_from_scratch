@@ -30,11 +30,11 @@ class GradientBoostingTree(BaseEstimator):
         
         # initialize the entire array with the initial prediction
         predictions = np.full(Y_train.shape, self.initial_prediction)
-        best_score = 1000000
+        best_score = float('inf')
         no_improvement_rounds = 0
         
         # consecutively build trees onto one another
-        for _ in range(self.n_estimators):
+        for iter in range(self.n_estimators):
             
             estimator, predictions = self._train_iteration(X_train, Y_train, predictions)
             
@@ -43,11 +43,12 @@ class GradientBoostingTree(BaseEstimator):
             # calculate a score for the current state of the model based on the validation data
             score = self._evaluate(X_validation, Y_validation)
             
-            # check if score has improved by at least 'tolerance' % within the last 'patience' rounds
+            # check if score has improved by at least 'tolerance' within the last 'patience' rounds
             # we prematurely stop the training => prevents overfitting and improves performance
-            if (best_score - score) / best_score <= self.tolerance:
+            if best_score - score <= self.tolerance:
                 no_improvement_rounds += 1
                 if no_improvement_rounds >= self.patience:
+                    self.n_iterations = iter
                     break
             else:
                 best_score = score
@@ -78,7 +79,7 @@ class GradientBoostingTree(BaseEstimator):
         pass
     
 class GradientBoostingClassifier(GradientBoostingTree):
-    def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 5, tolerance = 0.05, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators = 100, learning_rate = 0.15, patience = 5, tolerance = 1e-4, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         """A gradient boosting classifier suited for multiclass classification tasks that uses decision tree regressors as weak learners.
 
         Parameters
@@ -92,8 +93,8 @@ class GradientBoostingClassifier(GradientBoostingTree):
         `patience` : int, default=10
             The number of rounds without improvement before the training is stopped early.
             
-        `tolerance` : float, default=0.1, bounds=[0, 1)
-            The minimum percentage improvement in the score over *patience* rounds to be considered as an improvement.
+        `tolerance` : float, default=1e-4, bounds=[0, inf)
+            The minimum improvement in the score over *patience* rounds to be considered as an improvement.
         
         Weak learner parameters:
         
@@ -184,7 +185,7 @@ class GradientBoostingClassifier(GradientBoostingTree):
     
     
 class GradientBoostingRegressor(GradientBoostingTree):
-    def __init__(self, n_estimators = 50, learning_rate = 0.1, patience = 5, tolerance = 0.05, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
+    def __init__(self, n_estimators = 100, learning_rate = 0.15, patience = 5, tolerance = 1e-4, max_depth = 10, min_samples_split = 5, min_samples_leaf = 5, num_thresholds = 10) -> None:
         """A gradient boosting regressor decision tree regressors as weak learners.
 
         Parameters
@@ -198,8 +199,8 @@ class GradientBoostingRegressor(GradientBoostingTree):
         `patience` : int, default=10
             The number of rounds without improvement before the training is stopped early.
             
-        `tolerance` : float, default=0.1, bounds=[0, 1)
-            The minimum percentage improvement in the score over *patience* rounds to be considered as an improvement.
+        `tolerance` : float, default=1e-4, bounds=[0, inf)
+            The minimum improvement in the score over *patience* rounds to be considered as an improvement.
         
         Weak learner parameters:
         
@@ -261,6 +262,12 @@ class GradientBoostingRegressor(GradientBoostingTree):
         return np.mean(Y)
     
     def _evaluate(self, X, Y):
-        # calculates the mean squared error of the predictions
-        return np.mean((Y - self.predict(X)) ** 2)    
+        Y_pred = self.predict(X)
     
+        # Estimate variance as the mean squared residual (empirical variance)
+        variance = np.mean((Y - Y_pred) ** 2)
+        variance = max(variance, 1e-6)
+
+        # Formula for the Gaussian Negative Log Likelihood
+        return np.mean(0.5 * np.log(2 * np.pi * variance) + ((Y - Y_pred) ** 2) / (2 * variance))
+         
