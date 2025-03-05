@@ -144,7 +144,7 @@ class GradientBoostingClassifier(GradientBoostingTree):
             iteration_estimator.append(estimator)
             
             # since the predictions are used to calculate the residuals, they need to be updated all at once after all estimators are trained
-            new_predictions[:, class_idx] = self.learning_rate * estimator.predict(X)
+            new_predictions[:, class_idx] = predictions[:, class_idx] + self.learning_rate * estimator.predict(X)
         
         return iteration_estimator, new_predictions
        
